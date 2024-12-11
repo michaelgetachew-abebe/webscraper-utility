@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: msisdn-imei-finder
+  labels:
+    app: msisdn-imei-finder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: msisdn-imei-finder
+  template:
+    metadata:
+      labels:
+        app: msisdn-imei-finder
+    spec:
+      containers:
+        - image: 'container-registry-artifact-url:latest' # Container regitry Artifact URL
+          imagePullPolicy: Always
+          name: msisdn-imei-finder-container
+          ports:
+            - containerPort: 30
+              name: server
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: 125m
+              memory: 250Mi
+      imagePullSecrets:
+        - name: regcred
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: msisdn-imei-finder-service-lb
+spec:
+  type: LoadBalancer
+  ports:
+    - name: fraud-port
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    app: msisdn-imei-finder
+
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: msisdn-imei-finder
+spec:
+  rules:
+    - host: 'configured-host-ingress' # CONFIGURE INGRESS
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: msisdn-imei-finder-service-lb
+                port:
+                  number: 5000
